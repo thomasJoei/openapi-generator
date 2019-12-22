@@ -15,6 +15,11 @@ public class OAuth implements Authentication {
         this.accessToken = accessToken;
     }
 
+    public OAuth accessToken(String accessToken) {
+        this.accessToken = accessToken;
+        return this;
+    }
+
     @Override
     public void applyToParams(MultiValueMap<String, String> queryParams, HttpHeaders headerParams, MultiValueMap<String, String> cookieParams) {
         if (accessToken != null) {

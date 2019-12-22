@@ -40,6 +40,16 @@ public class ApiKeyAuth implements Authentication {
         this.apiKeyPrefix = apiKeyPrefix;
     }
 
+    public ApiKeyAuth apiKey(String apiKey) {
+        this.apiKey = apiKey;
+        return this;
+    }
+
+    public ApiKeyAuth apiKeyPrefix(String apiKeyPrefix) {
+        this.apiKeyPrefix = apiKeyPrefix;
+        return this;
+    }
+
     @Override
     public void applyToParams(MultiValueMap<String, String> queryParams, HttpHeaders headerParams, MultiValueMap<String, String> cookieParams) {
         if (apiKey == null) {

@@ -368,6 +368,7 @@ public class JavaClientCodegen extends AbstractJavaCodegen
         } else if (RESTTEMPLATE.equals(getLibrary())) {
             forceSerializationLibrary(SERIALIZATION_LIBRARY_JACKSON);
             supportingFiles.add(new SupportingFile("auth/Authentication.mustache", authFolder, "Authentication.java"));
+            supportingFiles.add(new SupportingFile("ApiClientBuilder.mustache", invokerFolder, "ApiClientBuilder.java"));
         } else if (WEBCLIENT.equals(getLibrary())) {
             setJava8Mode(true);
             additionalProperties.put("java8", "true");

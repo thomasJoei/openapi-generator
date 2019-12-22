@@ -18,6 +18,7 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -76,49 +77,60 @@ public class ApiClient {
         }
     }
 
-    private boolean debugging = false;
-
-    private HttpHeaders defaultHeaders = new HttpHeaders();
-    private MultiValueMap<String, String> defaultCookies = new LinkedMultiValueMap<String, String>();
-
-    private String basePath = "http://petstore.swagger.io:80/v2";
-
-    private RestTemplate restTemplate;
-
-    private Map<String, Authentication> authentications;
-
-    private DateFormat dateFormat;
+    private final boolean debugging;
+    private final HttpHeaders defaultHeaders;
+    private final MultiValueMap<String, String> defaultCookies;
+    private final String basePath;
+    private final RestTemplate restTemplate;
+    private final Map<String, Authentication> authentications;
+    private final DateFormat dateFormat;
 
     public ApiClient() {
-        this.restTemplate = buildRestTemplate();
-        init();
+        this(buildRestTemplate());
     }
 
     @Autowired
     public ApiClient(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-        init();
-    }
-
-    protected void init() {
         // Use RFC3339 format for date and datetime.
         // See http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14
-        this.dateFormat = new RFC3339DateFormat();
-
+        DateFormat dateFormat = new RFC3339DateFormat();
         // Use UTC as the default time zone.
-        this.dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        this.dateFormat = dateFormat;
 
         // Set default User-Agent.
-        setUserAgent("Java-SDK");
+        HttpHeaders defaultHeaders = new HttpHeaders();
+        defaultHeaders.add("User-Agent", "Java-SDK");
 
-        // Setup authentications (key: authentication name, value: authentication).
-        authentications = new HashMap<String, Authentication>();
+        Map<String, Authentication> authentications = new HashMap<String, Authentication>();
         authentications.put("api_key", new ApiKeyAuth("header", "api_key"));
         authentications.put("api_key_query", new ApiKeyAuth("query", "api_key_query"));
         authentications.put("http_basic_test", new HttpBasicAuth());
         authentications.put("petstore_auth", new OAuth());
         // Prevent the authentications from being modified.
-        authentications = Collections.unmodifiableMap(authentications);
+        this.authentications = Collections.unmodifiableMap(authentications);
+
+        this.basePath = "http://petstore.swagger.io:80/v2";
+        this.restTemplate = restTemplate;
+        this.defaultHeaders = new HttpHeaders();
+        this.defaultCookies = CollectionUtils.unmodifiableMultiValueMap(new LinkedMultiValueMap<String, String>());
+        this.debugging = false;
+
+        configureDateFormat();
+        configureDebugging();
+    }
+
+    public ApiClient(String basePath, RestTemplate restTemplate, Map<String, Authentication> authentications, HttpHeaders defaultHeaders, MultiValueMap<String, String> defaultCookies, DateFormat dateFormat, boolean debugging) {
+        this.basePath = basePath;
+        this.restTemplate = restTemplate;
+        this.authentications = Collections.unmodifiableMap(authentications);
+        this.defaultHeaders = defaultHeaders;
+        this.defaultCookies = CollectionUtils.unmodifiableMultiValueMap(defaultCookies);
+        this.dateFormat = dateFormat;
+        this.debugging = debugging;
+
+        configureDateFormat();
+        configureDebugging();
     }
 
     /**
@@ -129,15 +141,6 @@ public class ApiClient {
         return basePath;
     }
 
-    /**
-     * Set the base path, which should include the host
-     * @param basePath the base path
-     * @return ApiClient this client
-     */
-    public ApiClient setBasePath(String basePath) {
-        this.basePath = basePath;
-        return this;
-    }
 
     /**
      * Get authentications (key: authentication name, value: authentication).
@@ -242,16 +245,6 @@ public class ApiClient {
     }
 
     /**
-     * Set the User-Agent header's value (by adding to the default header map).
-     * @param userAgent the user agent string
-     * @return ApiClient this client
-     */
-    public ApiClient setUserAgent(String userAgent) {
-        addDefaultHeader("User-Agent", userAgent);
-        return this;
-    }
-
-    /**
      * Add a default header.
      *
      * @param name The header's name
@@ -281,9 +274,9 @@ public class ApiClient {
         return this;
     }
 
-    public void setDebugging(boolean debugging) {
+    public void configureDebugging() {
         List<ClientHttpRequestInterceptor> currentInterceptors = this.restTemplate.getInterceptors();
-        if(debugging) {
+        if(this.debugging) {
             if (currentInterceptors == null) {
                 currentInterceptors = new ArrayList<ClientHttpRequestInterceptor>();
             }
@@ -302,7 +295,6 @@ public class ApiClient {
                 this.restTemplate.setInterceptors(currentInterceptors);
             }
         }
-        this.debugging = debugging;
     }
 
     /**
@@ -322,19 +314,16 @@ public class ApiClient {
     }
 
     /**
-     * Set the date format used to parse/format date parameters.
-     * @param dateFormat Date format
-     * @return API client
+     * Configure the date format used to parse/format date parameters.
+     * @return void
      */
-    public ApiClient setDateFormat(DateFormat dateFormat) {
-        this.dateFormat = dateFormat;
+    public void configureDateFormat() {
         for(HttpMessageConverter converter:restTemplate.getMessageConverters()){
             if(converter instanceof AbstractJackson2HttpMessageConverter){
                 ObjectMapper mapper = ((AbstractJackson2HttpMessageConverter)converter).getObjectMapper();
-                mapper.setDateFormat(dateFormat);
+                mapper.setDateFormat(this.dateFormat);
             }
         }
-        return this;
     }
 
     /**
@@ -664,7 +653,7 @@ public class ApiClient {
      * Build the RestTemplate used to make HTTP requests.
      * @return RestTemplate
      */
-    protected RestTemplate buildRestTemplate() {
+    public static RestTemplate buildRestTemplate() {
         RestTemplate restTemplate = new RestTemplate();
         for(HttpMessageConverter converter:restTemplate.getMessageConverters()){
             if(converter instanceof AbstractJackson2HttpMessageConverter){

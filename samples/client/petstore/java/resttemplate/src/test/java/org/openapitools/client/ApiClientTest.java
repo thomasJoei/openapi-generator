@@ -7,8 +7,11 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.junit.*;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import static org.junit.Assert.*;
 
@@ -36,12 +39,14 @@ public class ApiClientTest {
         // custom date format: without milli-seconds, custom time zone
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ROOT);
         format.setTimeZone(TimeZone.getTimeZone("GMT+10"));
-        apiClient.setDateFormat(format);
+        ApiClient apiClientWithNewDateFormat = new ApiClient("", new RestTemplate(), new HashMap<String, Authentication>(), new HttpHeaders(), new LinkedMultiValueMap<String, String>(),format, false);
+
         dateStr = "2015-11-07T13:49:09+10:00";
-        assertEquals(dateStr, apiClient.formatDate(apiClient.parseDate("2015-11-07T03:49:09+00:00")));
-        assertEquals(dateStr, apiClient.formatDate(apiClient.parseDate("2015-11-07T03:49:09Z")));
-        assertEquals(dateStr, apiClient.formatDate(apiClient.parseDate("2015-11-07T00:49:09-03:00")));
-        assertEquals(dateStr, apiClient.formatDate(apiClient.parseDate("2015-11-07T13:49:09+10:00")));
+        assertEquals(dateStr, apiClientWithNewDateFormat.formatDate(apiClient.parseDate("2015-11-07T03:49:09+00:00")));
+        assertEquals(dateStr, apiClientWithNewDateFormat.formatDate(apiClient.parseDate("2015-11-07T03:49:09Z")));
+        assertEquals(dateStr, apiClientWithNewDateFormat.formatDate(apiClient.parseDate("2015-11-07T00:49:09-03:00")));
+        assertEquals(dateStr, apiClientWithNewDateFormat.formatDate(apiClient.parseDate("2015-11-07T13:49:09+10:00")));
+
     }
 
     @Test

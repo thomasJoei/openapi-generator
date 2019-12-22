@@ -28,6 +28,17 @@ public class HttpBasicAuth implements Authentication {
         this.password = password;
     }
 
+    public HttpBasicAuth username(String username) {
+        this.username = username;
+        return this;
+    }
+
+    public HttpBasicAuth password(String password) {
+        this.password = password;
+        return this;
+    }
+
+
     @Override
     public void applyToParams(MultiValueMap<String, String> queryParams, HttpHeaders headerParams, MultiValueMap<String, String> cookieParams) {
         if (username == null && password == null) {

@@ -24,6 +24,11 @@ public class HttpBearerAuth implements Authentication {
         this.bearerToken = bearerToken;
     }
 
+    public HttpBearerAuth bearerToken(String bearerToken) {
+        this.bearerToken = bearerToken;
+        return this;
+    }
+
     @Override
     public void applyToParams(MultiValueMap<String, String> queryParams, HttpHeaders headerParams, MultiValueMap<String, String> cookieParams) {
         if (bearerToken == null) {
